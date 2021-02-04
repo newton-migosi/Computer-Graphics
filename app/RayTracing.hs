@@ -1,10 +1,14 @@
 module RayTracing where
 
+import Light (computeLight)
+
 type twoD = (Int, Int)
 type threeD = (Int, Int, Int)
 
 data Sphere = Sphere { center :: threeD, radius :: Double , color :: Color}
 data Color = Color { red :: Double, green :: Double, blue :: Double}
+
+data Scene = Scene { lights :: [Light], cameras::[Camera], viewport :: Viewport, spheres :: [Sphere]}
 
 render canvas viewport camera = map paintPixel canvas
     where
@@ -23,7 +27,12 @@ trace origin dest (lbound, ubound) = loop closest_t closest_sphere spheres
     loop closest_t closest_sphere [] =
         case closest_sphere of
             Nothing -> bg_color
-            Just s -> color s
+            Just sphere -> color sphere
+        where
+            point = origin `vectorPlus` closest_t * d
+            orthogonal = vectorFrom point `to` center sphere
+            orthonormal = orthogonal `div` vectorSize orthogonal
+            color' = color sphere * computeLight point orthonormal
     
     loop closest_t closest_sphere (sphere:spheres)
         | t1 in [t_min, t_max] and t1 < closest_t = loop t1 sphere spheres
