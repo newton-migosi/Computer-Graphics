@@ -5,8 +5,9 @@ import Light (computeLight)
 type twoD = (Int, Int)
 type threeD = (Int, Int, Int)
 
-data Sphere = Sphere { center :: threeD, radius :: Double , color :: Color}
+data Sphere = Sphere { center :: threeD, radius :: Double , color :: Color, material :: Material}
 data Color = Color { red :: Double, green :: Double, blue :: Double}
+data Material = Matte | Shiny { specularity :: Double}
 
 data Scene = Scene { lights :: [Light], cameras::[Camera], viewport :: Viewport, spheres :: [Sphere]}
 
@@ -32,7 +33,7 @@ trace origin dest (lbound, ubound) = loop closest_t closest_sphere spheres
             point = origin `vectorPlus` closest_t * d
             orthogonal = vectorFrom point `to` center sphere
             orthonormal = orthogonal `div` vectorSize orthogonal
-            color' = color sphere * computeLight point orthonormal
+            color' = color sphere * computeLight point orthonormal (flip dest) (material sphere)
     
     loop closest_t closest_sphere (sphere:spheres)
         | t1 in [t_min, t_max] and t1 < closest_t = loop t1 sphere spheres
