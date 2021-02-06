@@ -24,18 +24,32 @@ render canvas viewport camera = map paintPixel canvas
 
         d = distance viewport camera
 
-trace origin dest (lbound, ubound) = loop closest_t closest_sphere spheres
-    loop closest_t closest_sphere [] =
-        case closest_sphere of
-            Nothing -> bg_color
-            Just sphere -> color sphere
-        where
-            point = origin `vectorPlus` closest_t * d
-            orthogonal = vectorFrom point `to` center sphere
-            orthonormal = orthogonal `div` vectorSize orthogonal
-            color' = color sphere * computeLight point orthonormal (flip dest) (material sphere)
+trace origin dest (lbound, ubound) = trace' color recursion_depth
+    where
+        trace' color recursion_depth =
+            let (closest_sphere', closest_t') = 
+                    closest_intersection closest_t closest_sphere spheres 
+            in  case closest_sphere of
+                    Nothing -> bg_color
+                    Just sphere -> 
+                        let point       = origin `vectorPlus` closest_t * d
+                            orthogonal  = vectorFrom point `to` center sphere
+                            orthonormal = orthogonal `div` vectorSize orthogonal
+                            intensity   = computeLight point orthonormal (flip dest) (material sphere)
+                            local_color'= color sphere * intensity
+                        in case reflective sphere of
+                             Nothing    -> local_color
+                             Just r     -> 
+                                let r = reflected_ray (flip dest)  orthonormal
+                                    reflected_color = trace point r (0.001, inf)
+                                in local_color * (1-r) + reflected_color * r
+                                
+
     
-    loop closest_t closest_sphere (sphere:spheres)
+
+    closest_intersection closest_t closest_sphere []  = (closest_sphere, closest_t)
+            
+    closest_intersection closest_t closest_sphere (sphere:spheres)
         | t1 in [t_min, t_max] and t1 < closest_t = loop t1 sphere spheres
         | t2 in [t_min, t_max] and t2 < closest_t = loop t2 sphere spheres
         where (t1,t2) = intersectRaySphere sphere
