@@ -1,15 +1,15 @@
 module Geometry where
 
-data Vector = Vector { x_coord:: Double, y_coord:: Double , z_coord:: Double }
+type Vector = [Double]
 
-length (Vector x y z) = sqrt (x*x + y*y + z*z)
+length v = sqrt (v `dot` v)
 
-scale c (Vector x y z) = Vector (c*x) (c*y) (c*z)
+scale c v = map (*c) v
 
-normalize v@(Vector 0 0 0) = v
-normalize v@(Vector x y z) = (1 / vector_length v) `scale` v
+normalize v@[0,0,0] = v
+normalize v = (1 / length v) `scale` v
 
-(Vector a b c) `dot` (Vector x y z) = a*x + b*y + c*z
+v `dot` w = sum $ zipWith (*) v w
 
 v `projected_onto` w = (v `dot` normalize w) `scale` normalize w
 
@@ -17,9 +17,15 @@ v `cos_angle_between` w = normalize v `dot` normalize w
 
 v `orthogonal` w = (v `dot` w)  == 0
 
-(Vector a b c) `cross` (Vector x y z) = Vector (b*z-c*y) (c*x-a*z) (a*y-b*x)
+[a, b, c] `cross` [x, y, z] = [b*z-c*y, c*x-a*z, a*y-b*x]
 
-(Vector a b c) `plus` (Vector x y z) = Vector (a+x) (b+y) (c+z)
+v `plus` w = zipWith (+) v w
 
-v `minus` w = v `plus` (-1 `scale` w)
+v `minus` w = zipWith (-) v w
 
+type Matrix = [[Double]]
+
+rows = id
+cols m = [map (!!c) m | (c,_)<-zip [0..] (m!!0)]
+
+a `multiply` b = [[c `dot` r | c<- cols b] | r<-rows a]
